@@ -1,0 +1,26 @@
+name: monitoring
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    # command: "-config.file=/etc/loki/config.yaml -target=read"
+    hostname: grafana-wempli
+    restart: unless-stopped
+    user: "0"
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana:/var/lib/grafana
+      # - ./grafana/config/grafana-config.yaml:/etc/loki/config.yaml:ro
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/loki.yaml
+    hostname: loki-wempli
+    restart: unless-stopped
+    user: "0"
+    ports:
+      - 3100:3100
+    volumes:
+      - ./loki/config/loki-config.yaml:/etc/loki/loki.yaml:ro
