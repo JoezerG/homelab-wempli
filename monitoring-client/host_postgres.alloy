@@ -1,0 +1,193 @@
+// TARGETS
+
+// LOKI
+loki.write "default" {
+  endpoint {
+    url = "http://192.168.144.45:3100/loki/api/v1/push"
+  }
+}
+
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://192.168.144.45:9090/api/v1/write"
+  }
+}
+
+// !SECTION
+
+// SECTION: SYSTEM LOGS & JOURNAL
+
+loki.source.journal "journal" {
+  max_age       = "24h0m0s"
+  relabel_rules = discovery.relabel.journal.rules
+  forward_to    = [loki.write.default.receiver]
+  labels        = {component = string.format("%s-journal", constants.hostname)}
+  // NOTE: This is important to fix https://github.com/grafana/alloy/issues/924
+  path          = "/var/log/journal" 
+}
+
+local.file_match "system" {
+  path_targets = [{
+    __address__ = "localhost",
+    __path__    = "/var/log/{syslog,messages,*.log}",
+    instance    = constants.hostname,
+    job         = string.format("%s-logs", constants.hostname),
+  }]
+}
+
+discovery.relabel "journal" {
+  targets = []
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+  rule {
+    source_labels = ["__journal__boot_id"]
+    target_label  = "boot_id"
+  }
+  rule {
+    source_labels = ["__journal__transport"]
+    target_label  = "transport"
+  }
+  rule {
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+}
+
+loki.source.file "system" {
+  targets    = local.file_match.system.targets
+  forward_to = [loki.write.default.receiver]
+}
+
+// !SECTION
+
+// SECTION: SYSTEM METRICS
+
+discovery.relabel "metrics" {
+  targets = prometheus.exporter.unix.metrics.targets
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+  rule {
+    target_label = "job"
+    replacement = string.format("%s-metrics", constants.hostname)
+  }
+}
+
+prometheus.exporter.unix "metrics" {
+  disable_collectors = ["ipvs", "btrfs", "infiniband", "xfs", "zfs"]
+  enable_collectors = ["meminfo"]
+  filesystem {
+    fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+    mount_points_exclude = "^/(dev|proc|run/credentials/.+|sys|var/lib/docker/.+)($|/)"
+    mount_timeout        = "5s"
+  }
+  netclass {
+    ignored_devices = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+  netdev {
+    device_exclude = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+}
+
+prometheus.scrape "metrics" {
+scrape_interval = "15s"
+  targets    = discovery.relabel.metrics.output
+  forward_to = [prometheus.remote_write.default.receiver]
+}
+
+// !SECTION
+
+// POSTGRES METRICS
+// 1. PostgreSQL Exporter Component
+prometheus.exporter.postgres "default" {
+  data_source_names = ["postgresql://exporter:Arizona55@localhost:5432/postgres?sslmode=disable"]
+}
+
+prometheus.relabel "postgres_add_host" {
+  forward_to = [prometheus.remote_write.default.receiver]
+
+  // Sobrescribe o añade la etiqueta 'instance' con el nombre del host real
+  rule {
+    replacement  = constants.hostname
+    target_label = "instance"
+  }
+  
+  // Opcional: añade una etiqueta extra por si quieres mantener el puerto
+  rule {
+    replacement  = "postgres-server"
+    target_label = "service_name"
+  }
+}
+
+// 2. Scrape the PostgreSQL Exporter
+prometheus.scrape "postgres" {
+  targets    = prometheus.exporter.postgres.default.targets
+  forward_to = [prometheus.relabel.postgres_add_host.receiver]
+  job_name   = string.format("%s-postgres", constants.hostname)
+  scrape_interval = "15s"
+}
+
+// LOGS
+// SYSTEM LOGS
+loki.source.journal "logs_integrations_integrations_node_exporter_journal_scrape" {
+  // Only collect logs from the last 24 hours
+  max_age       = "24h0m0s"
+  // Apply relabeling rules to the logs
+  relabel_rules = discovery.relabel.logs_integrations_integrations_node_exporter_journal_scrape.rules
+  // Send logs to the local Loki instance
+  forward_to    = [loki.write.default.receiver]
+}
+
+// Define which log files to collect for node_exporter
+local.file_match "logs_integrations_integrations_node_exporter_direct_scrape" {
+  path_targets = [{
+    // Target localhost for log collection
+    __address__ = "localhost",
+    // Collect standard system logs
+    __path__    = "/var/log/{syslog,messages,*.log}",
+    // Add instance label with hostname
+    instance    = constants.hostname,
+    // Add job label for logs
+    job         = string.format("%s-logs", constants.hostname),
+  }]
+}
+
+// Define relabeling rules for systemd journal logs
+discovery.relabel "logs_integrations_integrations_node_exporter_journal_scrape" {
+  targets = []
+
+  rule {
+    // Extract systemd unit information into a label
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+
+  rule {
+    // Extract boot ID information into a label
+    source_labels = ["__journal__boot_id"]
+    target_label  = "boot_id"
+  }
+
+  rule {
+    // Extract transport information into a label
+    source_labels = ["__journal__transport"]
+    target_label  = "transport"
+  }
+
+  rule {
+    // Extract log priority into a level label
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+}
+
+// Collect logs from files for node_exporter
+loki.source.file "logs_integrations_integrations_node_exporter_direct_scrape" {
+  // Use targets defined in local.file_match
+  targets    = local.file_match.logs_integrations_integrations_node_exporter_direct_scrape.targets
+  // Send logs to the local Loki instance
+  forward_to = [loki.write.default.receiver]
+}
