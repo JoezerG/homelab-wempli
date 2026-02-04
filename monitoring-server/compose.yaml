@@ -34,6 +34,7 @@ services:
     container_name: prometheus
     hostname: prometheus-wempli
     restart: unless-stopped
+    command: "--web.enable-remote-write-receiver --config.file=/etc/prometheus/prometheus.yaml"
     user: "0"
     ports:
       - 9090:9090
