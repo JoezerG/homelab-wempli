@@ -105,20 +105,28 @@ prometheus.exporter.mysql "mariadb" {
   data_source_name = "exporter:Arizona55@(localhost)/"
 }
 
+prometheus.relabel "mysql_add_host" {
+  forward_to = [prometheus.remote_write.default.receiver]
+
+  // Sobrescribe o añade la etiqueta 'instance' con el nombre del host real
+  rule {
+    replacement  = constants.hostname
+    target_label = "instance"
+  }
+  
+  // Opcional: añade una etiqueta extra por si quieres mantener el puerto
+  rule {
+    replacement  = "mysql-server"
+    target_label = "service_name"
+  }
+}
+
 prometheus.scrape "mariadb" {
   targets    = prometheus.exporter.mysql.mariadb.targets
-  forward_to = [prometheus.remote_write.default.receiver]
+  forward_to = [prometheus.relabel.mysql_add_host.receiver]
   job_name   = string.format("%s-mysql", constants.hostname)
-}
+  scrape_interval = "60s"
 
-// MariaDB LOGS
-local.file_target "mysql_logs" {
-  files = ["/var/log/mysql/*.log"]
-}
-
-loki.source.file "mysql_logs" {
-  targets    = local.file_target.mysql_logs.targets
-  forward_to = [loki.write.default.receiver]
 }
 
 // LOGS
