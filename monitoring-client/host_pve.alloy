@@ -1,0 +1,49 @@
+// Endpoints
+
+// LOKI
+loki.write "default" {
+  endpoint {
+    url = "http://192.168.144.45:3100/loki/api/v1/push"
+  }
+}
+
+// PROMETHEUS
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://192.168.144.45:9090/api/v1/write"
+  }
+}
+
+// Host Metrics (node_exporter)
+prometheus.exporter.unix "host" {
+  include_exporter_metrics = true
+}
+
+prometheus.scrape "host" {
+  targets    = prometheus.exporter.unix.host.targets
+  forward_to = [prometheus.remote_write.default.receiver]
+  job_name   = "pve-host"
+}
+
+// System Logs (Journald)
+loki.source.journal "read" {
+  forward_to    = [loki.write.default.receiver]
+  relabel_rules = loki.relabel.journal.rules
+  labels        = {job = "journal"}
+}
+
+loki.relabel "journal" {
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+}
+
+// PVE Cluster Logs
+loki.source.file "pve_cluster" {
+  targets = [
+    {__path__ = "/var/log/pve-firewall.log", job = "pve-firewall"},
+    {__path__ = "/var/log/pveproxy/access.log", job = "pveproxy-access"},
+  ]
+  forward_to = [loki.write.default.receiver]
+}
