@@ -106,27 +106,28 @@ prometheus.exporter.postgres "default" {
   data_source_names = ["postgresql://exporter:Arizona55@localhost:5432/postgres?sslmode=disable"]
 }
 
-prometheus.relabel "postgres_add_host" {
+// 2. Relabel to add 'host' label for Grafana dashboard 17411 compatibility
+prometheus.relabel "postgres_add_labels" {
   forward_to = [prometheus.remote_write.default.receiver]
 
-  // Sobrescribe o añade la etiqueta 'instance' con el nombre del host real
+  // Add 'host' label with the hostname (required by dashboard 17411)
+  rule {
+    replacement  = constants.hostname
+    target_label = "host"
+  }
+  
+  // Also set 'instance' label for general compatibility
   rule {
     replacement  = constants.hostname
     target_label = "instance"
   }
-  
-  // Opcional: añade una etiqueta extra por si quieres mantener el puerto
-  rule {
-    replacement  = "postgres-server"
-    target_label = "service_name"
-  }
 }
 
-// 2. Scrape the PostgreSQL Exporter
+// 3. Scrape the PostgreSQL Exporter
 prometheus.scrape "postgres" {
   targets    = prometheus.exporter.postgres.default.targets
-  forward_to = [prometheus.relabel.postgres_add_host.receiver]
-  job_name   = string.format("%s-postgres", constants.hostname)
+  forward_to = [prometheus.relabel.postgres_add_labels.receiver]
+  job_name   = "postgresql"
   scrape_interval = "15s"
 }
 
@@ -191,3 +192,28 @@ loki.source.file "logs_integrations_integrations_node_exporter_direct_scrape" {
   // Send logs to the local Loki instance
   forward_to = [loki.write.default.receiver]
 }
+
+// !SECTION
+
+// SECTION: POSTGRESQL LOGS
+
+// Define which PostgreSQL log files to collect
+local.file_match "postgres_logs" {
+  path_targets = [
+    {
+      __address__ = "localhost",
+      __path__    = "/var/log/postgresql/postgresql-*.log",
+      instance    = constants.hostname,
+      job         = string.format("%s-postgres", constants.hostname),
+      log_type    = "postgres",
+    },
+  ]
+}
+
+// Collect PostgreSQL logs and send to Loki
+loki.source.file "postgres_logs" {
+  targets    = local.file_match.postgres_logs.targets
+  forward_to = [loki.write.default.receiver]
+}
+
+// !SECTION

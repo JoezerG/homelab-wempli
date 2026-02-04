@@ -190,3 +190,42 @@ loki.source.file "logs_integrations_integrations_node_exporter_direct_scrape" {
   // Send logs to the local Loki instance
   forward_to = [loki.write.default.receiver]
 }
+
+// !SECTION
+
+// SECTION: MARIADB LOGS
+
+// Define which MariaDB/MySQL log files to collect
+local.file_match "mariadb_logs" {
+  path_targets = [
+    {
+      __address__ = "localhost",
+      __path__    = "/var/log/mysql/error.log",
+      instance    = constants.hostname,
+      job         = string.format("%s-mysql", constants.hostname),
+      log_type    = "error",
+    },
+    {
+      __address__ = "localhost",
+      __path__    = "/var/log/mysql/slow.log",
+      instance    = constants.hostname,
+      job         = string.format("%s-mysql", constants.hostname),
+      log_type    = "slow_query",
+    },
+    {
+      __address__ = "localhost",
+      __path__    = "/var/log/mysql/mysql.log",
+      instance    = constants.hostname,
+      job         = string.format("%s-mysql", constants.hostname),
+      log_type    = "general",
+    },
+  ]
+}
+
+// Collect MariaDB logs and send to Loki
+loki.source.file "mariadb_logs" {
+  targets    = local.file_match.mariadb_logs.targets
+  forward_to = [loki.write.default.receiver]
+}
+
+// !SECTION
