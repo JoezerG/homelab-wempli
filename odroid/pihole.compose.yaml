@@ -12,5 +12,5 @@ services:
       - "80:80/tcp"
       - "443:443/tcp"
     volumes:
-      - /etc/pihole/:./pihole/
+      - ./pihole/:/etc/pihole/
       - /etc/localtime:/etc/localtime:ro
