@@ -1,1 +1,32 @@
 name: traefik-odroid
+
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik-odroid
+    hostname: traefik-odroid
+    restart: unless-stopped
+    networks:
+      home_lan:
+        ipv4_address: 192.168.144.18
+      services_front:
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.config.yaml:/etc/traefik/traefik.yaml:ro
+      - /etc/localtime:/etc/localtime:ro
+
+networks:
+  services_front:
+    external: true
+  home_lan:
+    driver: macvlan
+    driver_opts:
+      parent: end0 # Cambia por el nombre de tu interfaz (mira 'ip addr')
+    ipam:
+      config:
+        - subnet: 192.168.144.0/24 # Tu rango de red local
+          gateway: 192.168.144.1
