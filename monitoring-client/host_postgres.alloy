@@ -127,7 +127,7 @@ prometheus.relabel "postgres_add_labels" {
 prometheus.scrape "postgres" {
   targets    = prometheus.exporter.postgres.default.targets
   forward_to = [prometheus.relabel.postgres_add_labels.receiver]
-  job_name   = "postgresql"
+  job_name   = string.format("%s-postgres", constants.hostname)
   scrape_interval = "15s"
 }
 
