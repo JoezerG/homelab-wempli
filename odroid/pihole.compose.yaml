@@ -5,11 +5,21 @@ services:
     image: pihole/pihole:latest
     container_name: pihole
     restart: unless-stopped
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - "80:80/tcp"
-      - "443:443/tcp"
+    networks:
+      home_lan:
+        ipv4_address: 192.168.144.17
+    environment:
+      WEBPASSWORD: "Arizona55"
     volumes:
       - ./pihole/:/etc/pihole/
       - /etc/localtime:/etc/localtime:ro
+
+networks:
+  home_lan:
+    driver: macvlan
+    driver_opts:
+      parent: end0 # Cambia por el nombre de tu interfaz (mira 'ip addr')
+    ipam:
+      config:
+        - subnet: 192.168.144.0/24 # Tu rango de red local
+          gateway: 192.168.144.1
