@@ -44,6 +44,10 @@ entryPoints:
     # <--
   websecure:
     address: :443
+  metrics:
+    address: :8082
+    prometheus:
+      entryPoint: metrics
 
 # -- Configure your CertificateResolver here...
 certificatesResolvers:

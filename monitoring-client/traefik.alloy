@@ -1,6 +1,6 @@
 discovery.relabel "traefik_node" {
   targets = [{
-    __address__ = "localhost:8080",
+    __address__ = "localhost:8082/metrics",
   }]
   
   rule {
