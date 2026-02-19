@@ -27,11 +27,6 @@ accessLog:
 
 metrics:
   prometheus:
-    entryPoint: metrics
-    addEntryPointsLabels: true
-    addServicesLabels: true
-    addRoutersLabels: true
-    addMiddlewaresLabels: true
     buckets:
       - 0.1
       - 0.3
@@ -57,8 +52,6 @@ entryPoints:
     # <--
   websecure:
     address: :443
-  metrics:
-    address: :8082
 
 # -- Configure your CertificateResolver here...
 certificatesResolvers:
