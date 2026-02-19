@@ -1,0 +1,16 @@
+discovery.relabel "traefik_node" {
+  targets = [{
+    __address__ = "localhost:8080",
+  }]
+  
+  rule {
+    target_label = "instance"
+    replacement  = string.format("%s-traefik-proxy", constants.hostname)
+  }
+}
+
+prometheus.scrape "traefik" {
+  targets    = discovery.relabel.traefik_node.output
+  forward_to = [prometheus.remote_write.default.receiver]
+  job_name   = string.format("%s-traefik", constants.hostname)
+}

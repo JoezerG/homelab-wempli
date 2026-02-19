@@ -5,13 +5,25 @@ global:
 
 # --> (Optional) Change log level and format here ...
 #     - level: [TRACE, DEBUG, INFO, WARN, ERROR, FATAL]
-# log:
-#  level: ERROR
+log:
+  level: [INFO, WARN, ERROR, FATAL]
 # <--
 
-# --> (Optional) Enable accesslog here ...
-# accesslog: {}
-# <--
+accessLog:
+  format: json
+  filters:
+    statusCodes:
+      - "200"
+      - "400-404"
+      - "500-503"
+  fields:
+    names:
+      ClientUsername: drop
+    headers:
+      defaultMode: keep
+      names:
+        User-Agent: redact
+        Content-Type: keep
 
 # --> (Optional) Enable API and Dashboard here, don't do in production
 api:
