@@ -1,16 +1,16 @@
-discovery.relabel "traefik_node" {
-  targets = [{
-    __address__ = "localhost:8082/metrics",
-  }]
-  
-  rule {
-    target_label = "instance"
-    replacement  = string.format("%s-traefik-proxy", constants.hostname)
-  }
+discovery.relabel "metrics_integrations_integrations_traefik" {
+	targets = [{
+		__address__ = "localhost:8080",
+	}]
+
+	rule {
+		target_label = "instance"
+		replacement  = constants.hostname
+	}
 }
 
-prometheus.scrape "traefik" {
-  targets    = discovery.relabel.traefik_node.output
-  forward_to = [prometheus.remote_write.default.receiver]
-  job_name   = string.format("%s-traefik", constants.hostname)
+prometheus.scrape "metrics_integrations_integrations_traefik" {
+	targets    = discovery.relabel.metrics_integrations_integrations_traefik.output
+	forward_to = [prometheus.remote_write.default.receiver]
+	job_name   = "integrations/traefik"
 }
