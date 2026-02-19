@@ -25,6 +25,10 @@ accessLog:
         User-Agent: redact
         Content-Type: keep
 
+metrics:
+  prometheus:
+    entryPoint: metrics
+
 # --> (Optional) Enable API and Dashboard here, don't do in production
 api:
   dashboard: true
@@ -46,8 +50,6 @@ entryPoints:
     address: :443
   metrics:
     address: :8082
-    prometheus:
-      entryPoint: metrics
 
 # -- Configure your CertificateResolver here...
 certificatesResolvers:
