@@ -6,7 +6,9 @@ services:
     container_name: traefik
     restart: unless-stopped
     networks:
-      - proxy
+      proxy:
+      shared_macvlan:
+        ipv4_address: 192.168.144.15
     ports:
       - "80:80"
       - "443:443"
@@ -16,8 +18,10 @@ services:
       - ./config/:/etc/traefik/:ro
       - ./certs/:/var/traefik/certs/:rw
     environment:
-      - CF_DNS_API_TOKEN=your-cloudflare-api-toke
+      - CF_DNS_API_TOKEN=qZ4KC0hDadb4Uqny5QWCndVrD6a02cr264YAb6q
 
 networks:
   proxy:
+    external: true
+  shared_macvlan:
     external: true
