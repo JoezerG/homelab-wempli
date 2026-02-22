@@ -9,7 +9,7 @@ services:
     networks:
       proxy:
       shared_macvlan:
-        ipv4_address: 192.168.144.18
+        ipv4_address: 192.168.144.15
     ports:
       - "80:80"
       - "443:443"
