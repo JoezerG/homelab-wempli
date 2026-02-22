@@ -35,3 +35,16 @@ CREATE USER 'exporter'@'localhost' IDENTIFIED BY 'STRONG_PASSWORD';
 GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'exporter'@'localhost';
 FLUSH PRIVILEGES;
 ```
+
+## Odroid
+
+Crear red macvlan compartida
+
+```bash
+docker network create -d macvlan \
+  --subnet=192.168.144.0/24 \
+  --gateway=192.168.144.1 \
+  --ip-range=192.168.144.64/27 \
+  -o parent=end0 \
+  shared_macvlan
+```
