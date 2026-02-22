@@ -5,6 +5,7 @@ services:
     image: pihole/pihole:latest
     container_name: pihole
     restart: unless-stopped
+    hostname: pihole-odroid
     networks:
       proxy:
       shared_macvlan:
@@ -15,12 +16,12 @@ services:
       - ./pihole/:/etc/pihole/
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - 8080:80/tcp
+      - 8081:80/tcp
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pihole.rule=Host(`pihole.odroid.home`)"
       - "traefik.http.routers.pihole.entrypoints=web"
-      - "traefik.http.services.pihole.loadbalancer.server.port=8080" # <-- Change this if your service listens on a different port
+      - "traefik.http.services.pihole.loadbalancer.server.port=8081" # <-- Change this if your service listens on a different port
       # - "traefik.http.routers.pihole.tls.certresolver=cloudflare"
 
 networks:
