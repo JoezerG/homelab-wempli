@@ -7,7 +7,7 @@ services:
     hostname: traefik-odroid
     restart: unless-stopped
     networks:
-      home_lan:
+      home_lab_vlan:
         ipv4_address: 192.168.144.18
       services_front:
     ports:
@@ -22,11 +22,5 @@ services:
 networks:
   services_front:
     external: true
-  home_lan:
-    driver: macvlan
-    driver_opts:
-      parent: end0 # Cambia por el nombre de tu interfaz (mira 'ip addr')
-    ipam:
-      config:
-        - subnet: 192.168.144.0/24 # Tu rango de red local
-          gateway: 192.168.144.1
+  home_lab_vlan:
+    external: true

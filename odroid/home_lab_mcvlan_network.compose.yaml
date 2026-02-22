@@ -1,0 +1,10 @@
+networks:
+  home_lab_vlan:
+    name: home_lab_vlan # <--- IMPORTANTE: Fuerza el nombre global
+    driver: macvlan
+    driver_opts:
+      parent: end0
+    ipam:
+      config:
+        - subnet: 192.168.144.0/24
+          gateway: 192.168.144.1
