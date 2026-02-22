@@ -1,6 +1,6 @@
 networks:
-  home_lab_vlan:
-    name: home_lab_vlan # <--- IMPORTANTE: Fuerza el nombre global
+  shared_macvlan:
+    name: shared_macvlan # <--- IMPORTANTE: Fuerza el nombre global
     driver: macvlan
     driver_opts:
       parent: end0

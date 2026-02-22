@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     networks:
       proxy:
-      home_lab_vlan:
+      shared_macvlan:
         ipv4_address: 192.168.144.18
     ports:
       - "80:80"
@@ -22,5 +22,5 @@ services:
 networks:
   proxy:
     external: true
-  home_lab_vlan:
+  shared_macvlan:
     external: true
